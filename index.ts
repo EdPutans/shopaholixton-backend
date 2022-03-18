@@ -46,9 +46,17 @@ app.patch('/items/:id', async (req, res) => {
   const id = Number(req.params.id);
   const { name, imageUrl, price } = req.body;
 
-  // check JWT -> pull out the user by ID
-  // if user is admin -> update and send 200 good job
-  // else => send 401 Check your privilege
+  const userData: any = jwt.verify(req.headers.authorization || '', securityKey);
+
+  if (!userData?.id) return res.status(403).send({ error: "Stop trying to break the token it didnt do nothing wrong. bruh" })
+
+  const user = await prisma.user.findFirst({
+    where: {
+      id: userData.id
+    }
+  });
+  if (!user) return res.status(403).send({ error: "Something wrong with user!" })
+  if (user.privileges !== 'admin') return res.status(403).send({ error: "You're not allowed to be here boi" })
 
   const updatedItem = await prisma.item.update({
     where: { id },
